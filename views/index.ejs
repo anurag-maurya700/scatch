@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auth</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Premium Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+}
+
+/* animated gradient glow */
+.bg-animate {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, #7c3aed, transparent);
+    filter: blur(120px);
+    animation: float 8s ease-in-out infinite;
+}
+.bg-animate2 {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, #ec4899, transparent);
+    filter: blur(120px);
+    animation: float 10s ease-in-out infinite alternate;
+}
+
+@keyframes float {
+    0% { transform: translate(0,0); }
+    50% { transform: translate(100px, -100px); }
+    100% { transform: translate(0,0); }
+}
+
+/* glass card */
+.glass {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.15);
+}
+
+/* input style */
+.input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    outline: none;
+}
+.input::placeholder {
+    color: #bbb;
+}
+</style>
+</head>
+
+<body class="flex items-center justify-center h-screen relative overflow-hidden">
+
+<!-- BACKGROUND GLOW -->
+<div class="bg-animate top-0 left-0"></div>
+<div class="bg-animate2 bottom-0 right-0"></div>
+
+<!-- CARD -->
+<div class="glass p-8 rounded-3xl shadow-2xl w-80 space-y-6 z-10">
+
+    <!-- LOGO -->
+    <h1 class="text-center text-2xl font-bold text-white tracking-wide">
+        💎 MyStore
+    </h1>
+
+    <!-- TOGGLE -->
+    <div class="flex justify-center gap-6 text-sm text-gray-300">
+        <button onclick="showSignup()" id="signupTab" class="text-purple-400 font-semibold">Sign Up</button>
+        <button onclick="showLogin()" id="loginTab">Login</button>
+    </div>
+<!-- MESSAGE -->
+<p id="msg" class="text-center text-sm text-yellow-300"></p>
+
+<!-- SIGNUP -->
+<form id="signupForm" class="space-y-4">
+
+    <input type="text" id="signupName" placeholder="Full Name" class="input">
+    <input type="email" id="signupEmail" placeholder="Email" class="input">
+    <input type="password" id="signupPassword" placeholder="Password" class="input">
+
+    <button type="submit"
+        class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2 rounded-xl">
+        Create Account
+    </button>
+
+</form>
+
+<!-- LOGIN -->
+<form id="loginForm" class="space-y-4 hidden">
+
+    <input type="email" id="loginEmail" placeholder="Email" class="input">
+    <input type="password" id="loginPassword" placeholder="Password" class="input">
+
+    <button type="submit"
+        class="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white py-2 rounded-xl">
+        Login
+    </button>
+
+</form>
+
+<script>
+const msg = document.getElementById("msg");
+
+// SIGNUP
+document.getElementById("signupForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const res = await fetch("/users/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            fullname: document.getElementById("signupName").value,
+            email: document.getElementById("signupEmail").value,
+            password: document.getElementById("signupPassword").value
+        })
+    });
+
+    const data = await res.json();
+
+    msg.innerText = data.message;
+
+    if (data.success) {
+        showLogin(); // switch to login
+    }
+});
+
+// LOGIN
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const res = await fetch("/users/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            email: document.getElementById("loginEmail").value,
+            password: document.getElementById("loginPassword").value
+        })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        window.location.href = "/home";
+    } else {
+        msg.innerText = data.message;
+    }
+});
+const signupForm = document.getElementById("signupForm");
+const loginForm = document.getElementById("loginForm");
+const signupTab = document.getElementById("signupTab");
+const loginTab = document.getElementById("loginTab");
+
+// ✅ SHOW SIGNUP
+function showSignup() {
+    signupForm.classList.remove("hidden");
+    loginForm.classList.add("hidden");
+
+    signupTab.classList.add("text-purple-400");
+    loginTab.classList.remove("text-purple-400");
+}
+
+// ✅ SHOW LOGIN
+function showLogin() {
+    loginForm.classList.remove("hidden");
+    signupForm.classList.add("hidden");
+
+    loginTab.classList.add("text-purple-400");
+    signupTab.classList.remove("text-purple-400");
+}
+</script>
+</body>
+</html>

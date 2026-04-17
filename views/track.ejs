@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Track Order | MyStore</title>
+
+<!-- LEAFLET -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+    font-family: 'Poppins', sans-serif;
+    background: radial-gradient(circle at top, #1e1b4b, #020617);
+    color: white;
+    text-align: center;
+}
+
+#map {
+    height: 500px;
+    width: 90%;
+    margin: auto;
+    border-radius: 16px;
+    margin-top: 20px;
+}
+
+.card {
+    background: rgba(255,255,255,0.05);
+    padding: 20px;
+    border-radius: 16px;
+    width: 90%;
+    margin: auto;
+    margin-top: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.status {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 14px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>📦 Live Order Tracking</h1>
+
+<div class="card">
+    <p>🚚 Your order is on the way</p>
+    <p id="eta">⏱ Calculating ETA...</p>
+
+    <div class="status">
+        <span>📦 Ordered</span>
+        <span>🚚 On the way</span>
+        <span>🏠 Delivered</span>
+    </div>
+</div>
+
+<div id="map"></div>
+
+<script>
+
+// 📍 FIXED LOCATIONS (Demo)
+const shopLocation = [25.3176, 82.9739]; // shop
+let deliveryLocation = [
+    Number("<%= order.location?.lat || 25.3176 %>"),
+    Number("<%= order.location?.lng || 82.9739 %>")
+];
+
+// 🗺️ INIT MAP
+let map = L.map('map').setView(deliveryLocation, 14);
+
+// 🌍 TILE
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+// 🏪 SHOP MARKER
+L.marker(shopLocation).addTo(map)
+    .bindPopup("🏪 Store Location");
+
+// 🚚 DELIVERY ICON
+let deliveryIcon = L.icon({
+    iconUrl: "https://cdn-icons-png.flaticon.com/512/1995/1995574.png",
+    iconSize: [40, 40]
+});
+
+// 🚚 DELIVERY MARKER
+let marker = L.marker(deliveryLocation, { icon: deliveryIcon }).addTo(map);
+
+// 🛣️ ROUTE LINE
+let routeLine = L.polyline([shopLocation, deliveryLocation], {
+    color: "yellow",
+    weight: 4
+}).addTo(map);
+
+// 📏 DISTANCE + ETA
+function calculateETA(from, to) {
+    const R = 6371; // km
+    const dLat = (to[0] - from[0]) * Math.PI / 180;
+    const dLng = (to[1] - from[1]) * Math.PI / 180;
+
+    const a =
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(from[0]*Math.PI/180) * Math.cos(to[0]*Math.PI/180) *
+        Math.sin(dLng/2) * Math.sin(dLng/2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c;
+
+    const speed = 30; // km/h (delivery speed)
+    const time = distance / speed;
+
+    return Math.round(time * 60); // minutes
+}
+
+// ⏱️ INITIAL ETA
+document.getElementById("eta").innerText =
+    "⏱ ETA: " + calculateETA(shopLocation, deliveryLocation) + " mins";
+
+// 🔥 SMOOTH MOVE FUNCTION
+function smoothMove(marker, newLatLng) {
+
+    const current = marker.getLatLng();
+
+    let lat = current.lat;
+    let lng = current.lng;
+
+    const steps = 20;
+    let i = 0;
+
+    const deltaLat = (newLatLng[0] - lat) / steps;
+    const deltaLng = (newLatLng[1] - lng) / steps;
+
+    const interval = setInterval(() => {
+
+        lat += deltaLat;
+        lng += deltaLng;
+
+        marker.setLatLng([lat, lng]);
+        map.panTo([lat, lng]);
+
+        i++;
+
+        if (i >= steps) clearInterval(interval);
+
+    }, 100);
+}
+async function drawRoute(from, to) {
+
+    const url = `https://router.project-osrm.org/route/v1/driving/${from[1]},${from[0]};${to[1]},${to[0]}?overview=full&geometries=geojson`;
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+
+    if (window.routeLine) {
+        map.removeLayer(window.routeLine);
+    }
+
+    window.routeLine = L.polyline(coords, {
+        color: "cyan",
+        weight: 5
+    }).addTo(map);
+}
+
+// 🔥 LIVE TRACKING
+const socket = io();
+
+socket.on("track-<%= order._id %>", (data) => {
+
+    let newPos = [data.lat, data.lng];
+
+    marker.setLatLng(newPos);
+    map.panTo(newPos);
+
+    drawRoute(shopLocation, newPos); // optional (road route)
+
+});
+
+</script>
+
+</body>
+</html>

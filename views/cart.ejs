@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cart | MyStore</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+    font-family: 'Poppins', sans-serif;
+    background: radial-gradient(circle at top, #312e81, #0f172a);
+}
+.heading {
+    font-family: 'Playfair Display', serif;
+}
+.glass {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+</style>
+
+</head>
+
+<body class="text-white px-6 py-10">
+
+<!-- HEADER -->
+<div class="flex justify-between items-center mb-10 max-w-5xl mx-auto">
+
+    <h1 class="text-4xl font-bold heading text-purple-300 tracking-wide">
+        🛒 Shopping Cart
+    </h1>
+
+    <a href="/home" 
+       class="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-2 rounded-full shadow-lg hover:scale-105 transition">
+        ← Continue Shopping
+    </a>
+    <a href="/cart" class="relative">
+    🛒
+    <span id="cart-count"
+        class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 rounded-full">
+        <%= user.cart.length %>
+    </span>
+</a>
+</div>
+
+<% let total = 0; %>
+
+<!-- CART ITEMS -->
+<div class="space-y-6 max-w-5xl mx-auto">
+
+<% if(user.cart.length > 0){ %>
+
+<% user.cart.forEach(item => { 
+    total += item.product.price * item.quantity;
+%>
+
+<div class="glass p-6 rounded-2xl flex gap-6 items-center shadow-lg hover:shadow-2xl transition duration-300">
+
+    <!-- IMAGE -->
+    <img src="<%= item.product.image %>" 
+         class="w-28 h-28 object-cover rounded-xl border border-gray-700 shadow-md">
+
+    <!-- DETAILS -->
+    <div class="flex-1 space-y-2">
+
+        <h2 class="text-xl font-semibold text-purple-200">
+            <%= item.product.name %>
+        </h2>
+
+        <p class="text-gray-300">
+            ₹<%= item.product.price %>
+        </p>
+
+        <!-- QUANTITY CONTROLS -->
+       <div class="flex items-center gap-4 mt-3">
+
+    <button onclick="decreaseQty('<%= item.product._id %>', this)"
+        class="w-8 h-8 bg-gray-700 rounded-full">-</button>
+
+    <span class="qty text-lg font-bold">
+        <%= item.quantity %>
+    </span>
+
+    <button onclick="increaseQty('<%= item.product._id %>', this)"
+        class="w-8 h-8 bg-gray-700 rounded-full">+</button>
+
+</div>
+
+        <!-- SUBTOTAL -->
+      <p class="subtotal text-yellow-400 font-semibold mt-2">
+    ₹<%= item.product.price * item.quantity %>
+</p>
+    </div>
+
+    <!-- REMOVE -->
+    <a href="/products/remove-from-cart/<%= item.product._id %>"
+       class="bg-red-500 px-4 py-2 rounded-lg text-white hover:bg-red-600 transition shadow">
+       Remove
+    </a>
+
+</div>
+
+<% }) %>
+
+<% } else { %>
+
+<div class="text-center text-gray-400 mt-20">
+    <h2 class="text-3xl mb-2">🛒 Empty Cart</h2>
+    <p class="text-gray-500">Add products to get started</p>
+</div>
+
+<% } %>
+
+</div>
+
+<!-- TOTAL + CHECKOUT -->
+<% if(user.cart.length > 0){ %>
+
+<div class="max-w-5xl mx-auto mt-12">
+
+    <div class="glass p-6 rounded-2xl flex justify-between items-center shadow-xl">
+
+        <h2 class="text-xl text-gray-300">
+            Total Amount
+        </h2>
+
+    
+        <h2 id="cart-total" class="text-3xl font-bold text-green-400">
+    ₹<%= total %>
+</h2>
+
+    </div>
+
+    <!-- CHECKOUT -->
+    <div class="text-right mt-6">
+<button onclick="window.location.href='/checkout'"
+    class="bg-gradient-to-r from-green-400 to-emerald-500 px-8 py-3 rounded-xl text-lg font-semibold shadow-lg hover:scale-105 transition">
+    Proceed to Checkout 💳
+</button>
+    </div>
+
+</div>
+
+<% } %>
+<script>
+
+// ➕ INCREASE
+async function increaseQty(id, btn) {
+
+    const res = await fetch(`/products/increase-ajax/${id}`, { method: "POST" });
+    const data = await res.json();
+
+    if (data.success) {
+        let card = btn.closest(".glass");
+
+        card.querySelector(".qty").innerText = data.quantity;
+        card.querySelector(".subtotal").innerText = "₹" + data.subtotal;
+
+        document.getElementById("cart-total").innerText = "₹" + data.total;
+    }
+}
+
+// ➖ DECREASE
+async function decreaseQty(id, btn) {
+
+    const res = await fetch(`/products/decrease-ajax/${id}`, { method: "POST" });
+    const data = await res.json();
+
+    if (data.success) {
+        let card = btn.closest(".glass");
+
+        card.querySelector(".qty").innerText = data.quantity;
+        card.querySelector(".subtotal").innerText = "₹" + data.subtotal;
+
+        document.getElementById("cart-total").innerText = "₹" + data.total;
+    }
+}
+
+// ❌ REMOVE
+async function removeFromCart(id, btn) {
+
+    const res = await fetch(`/products/remove-from-cart-ajax/${id}`, {
+        method: "POST"
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+
+        btn.closest(".glass").remove();
+
+        document.getElementById("cart-total").innerText = "₹" + data.total;
+
+        document.getElementById("cart-count").innerText = data.count;
+
+        if (data.count === 0) {
+            location.reload();
+        }
+    }
+}
+
+</script>
+
+</body>
+</html>

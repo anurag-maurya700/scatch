@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Delivery Panel</title>
+<script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+
+<h2>🚚 Delivery Boy Panel</h2>
+
+<button onclick="startTracking()">Start Delivery</button>
+
+<script>
+
+const socket = io();
+
+function startTracking() {
+
+    if (navigator.geolocation) {
+
+        navigator.geolocation.watchPosition(position => {
+
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+
+            socket.emit("delivery-location", {
+                orderId: "<%= order._id %>",
+                lat,
+                lng
+            });
+
+        });
+
+    } else {
+        alert("GPS not supported");
+    }
+}
+
+</script>
+
+</body>
+</html>

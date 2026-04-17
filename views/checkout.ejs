@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Checkout | MyStore</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+    font-family: 'Poppins', sans-serif;
+    background: radial-gradient(circle at top, #1e1b4b, #020617);
+}
+.heading {
+    font-family: 'Playfair Display', serif;
+}
+.glass {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+</style>
+
+</head>
+
+<body class="text-white px-6 py-10">
+
+<!-- HEADER -->
+<div class="max-w-6xl mx-auto mb-10 flex justify-between items-center">
+    <h1 class="text-4xl font-bold heading text-purple-300">
+        💳 Checkout
+    </h1>
+
+    <a href="/cart"
+       class="bg-gray-700 px-4 py-2 rounded-lg hover:bg-gray-600 transition">
+        ← Back to Cart
+    </a>
+</div>
+
+<div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-10">
+
+<!-- LEFT SIDE -->
+<div class="md:col-span-2 space-y-6">
+
+    <!-- ADDRESS LIST -->
+    <div class="glass p-6 rounded-2xl shadow-lg">
+        <h2 class="text-xl mb-4 font-semibold text-purple-200">
+            📍 Select Delivery Address
+        </h2>
+
+        <% if(user.addresses.length > 0){ %>
+
+            <% user.addresses.forEach((addr, index) => { %>
+
+            <div class="bg-gray-800/60 p-4 rounded-xl mb-3 flex justify-between items-start">
+
+                <label class="flex gap-4 cursor-pointer">
+                    <input 
+                        type="radio" 
+                        name="address" 
+                        value="<%= index %>" 
+                        class="mt-1"
+                        <%= index === 0 ? "checked" : "" %>
+                    >
+
+                    <div>
+                        <p class="font-medium"><%= addr.fullname %> | <%= addr.phone %></p>
+                        <p class="text-sm text-gray-300"><%= addr.addressLine %>, <%= addr.city %></p>
+                        <p class="text-sm text-gray-400"><%= addr.state %> - <%= addr.pincode %></p>
+                    </div>
+                </label>
+
+                <!-- ❌ DELETE BUTTON FIXED -->
+                <form method="POST" action="/delete-address/<%= index %>">
+                    <button class="text-red-400 text-sm hover:underline">
+                        Delete ❌
+                    </button>
+                </form>
+
+            </div>
+
+            <% }) %>
+
+        <% } else { %>
+            <p class="text-gray-400">No address found. Add one below 👇</p>
+        <% } %>
+    </div>
+
+    <!-- ADD ADDRESS -->
+    <div class="glass p-6 rounded-2xl shadow-lg">
+        <h3 class="text-lg mb-4 text-blue-300 font-semibold">
+            ➕ Add New Address
+        </h3>
+
+        <form method="POST" action="/add-address" class="grid grid-cols-2 gap-3">
+
+            <input name="fullname" required placeholder="Full Name" class="col-span-2 text-black p-2 rounded">
+            <input name="phone" required placeholder="Phone" class="text-black p-2 rounded">
+            <input name="pincode" required placeholder="Pincode" class="text-black p-2 rounded">
+            <input name="city" required placeholder="City" class="text-black p-2 rounded">
+            <input name="state" required placeholder="State" class="text-black p-2 rounded">
+            <input name="addressLine" required placeholder="Address" class="col-span-2 text-black p-2 rounded">
+            <input name="landmark" placeholder="Landmark" class="col-span-2 text-black p-2 rounded">
+
+            <button class="col-span-2 bg-blue-500 py-2 rounded-lg hover:bg-blue-600 transition">
+                Save Address
+            </button>
+
+        </form>
+    </div>
+
+</div>
+
+<!-- RIGHT SIDE -->
+<div class="sticky top-10 h-fit">
+
+    <div class="glass p-6 rounded-2xl shadow-xl">
+
+        <h2 class="text-lg mb-4 text-purple-200 font-semibold">
+            🧾 Order Summary
+        </h2>
+
+        <% let total = 0; %>
+
+        <div class="space-y-3 max-h-64 overflow-y-auto">
+
+        <% user.cart.forEach(item => { 
+            total += item.product.price * item.quantity;
+        %>
+
+        <div class="flex justify-between text-sm border-b border-gray-700 pb-2">
+
+            <span>
+                <%= item.product.name %> × <%= item.quantity %>
+            </span>
+
+            <span class="text-yellow-400">
+                ₹<%= item.product.price * item.quantity %>
+            </span>
+
+        </div>
+
+        <% }) %>
+
+        </div>
+
+        <!-- TOTAL -->
+        <div class="flex justify-between mt-6 text-xl font-semibold">
+            <span>Total</span>
+            <span class="text-green-400">₹<%= total %></span>
+        </div>
+        
+
+        <!-- PAY -->
+     <div class="space-y-3 mt-6">
+
+<button onclick="payNow()"
+class="w-full bg-green-500 py-3 rounded-xl font-semibold">
+💳 Pay Online
+</button>
+
+<button onclick="placeCOD()"
+class="w-full bg-yellow-400 py-3 rounded-xl font-semibold text-black">
+💰 Cash on Delivery
+</button>
+
+</div>
+
+    </div>
+
+</div>
+
+</div>
+
+<!-- PAYMENT -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+async function payNow() {
+
+    const selectedAddress = document.querySelector("input[name='address']:checked");
+
+    if (!selectedAddress) {
+        alert("⚠️ Please select address");
+        return;
+    }
+
+    try {
+        const res = await fetch("/create-order", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                addressIndex: selectedAddress.value
+            })
+        });
+
+        const data = await res.json();
+
+        if (!data.success) {
+            alert("Order creation failed");
+            return;
+        }
+
+        const options = {
+            key: data.key,
+            amount: data.order.amount,
+            currency: "INR",
+            name: "MyStore",
+            description: "Test Payment",
+            order_id: data.order.id,
+
+            handler: async function (response) {
+
+                await fetch("/verify-payment", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(response)
+                });
+
+                window.location.href = "/success";
+            },
+                method: {
+    card: true,
+    upi: false,
+    wallet: false,
+    netbanking: true,
+    emi: false,
+    paylater: false
+},
+
+    prefill: {
+        name: "Test User",
+        email: "test@test.com",
+        contact: "9999999999"
+    },
+
+    theme: {
+        color: "#6366f1"
+    }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+
+    } catch (err) {
+        alert("Payment error ❌");
+        console.log(err);
+    }
+}
+</script>
+<script>
+async function placeCOD() {
+
+    const selectedAddress = document.querySelector("input[name='address']:checked");
+
+    if (!selectedAddress) {
+        alert("⚠️ Please select address");
+        return;
+    }
+
+    try {
+        const res = await fetch("/cod-order", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                addressIndex: selectedAddress.value
+            })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            window.location.href = "/success";
+        } else {
+            alert("COD order failed ❌");
+        }
+
+    } catch (err) {
+        console.log(err);
+        alert("Error placing COD order");
+    }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-900 text-white flex justify-center items-center h-screen">
+
+<form action="/products/add" method="post" class="bg-gray-800 p-6 rounded-xl space-y-4 w-80">
+
+<h2 class="text-xl font-bold text-center">Add Product</h2>
+
+<input name="name" placeholder="Product Name" class="w-full p-2 rounded bg-gray-700">
+
+<input name="price" placeholder="Price" class="w-full p-2 rounded bg-gray-700">
+
+<input name="image" placeholder="Image URL" class="w-full p-2 rounded bg-gray-700">
+
+<select name="category" class="w-full p-2 rounded bg-gray-700">
+    <option value="jewellery">Jewellery</option>
+    <option value="pickle">Pickle</option>
+</select>
+
+<button class="w-full bg-purple-500 py-2 rounded">Add Product</button>
+
+</form>
+
+</body>
+</html>

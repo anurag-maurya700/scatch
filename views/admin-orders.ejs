@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+body {
+    background: linear-gradient(135deg, #0f172a, #020617);
+}
+.card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+</style>
+</head>
+
+<body class="text-white p-10">
+
+<!-- HEADER -->
+<div class="flex justify-between items-center mb-10">
+    <h1 class="text-4xl font-bold tracking-wide">
+        📊 Admin Dashboard
+    </h1>
+
+    <a href="/home"
+       class="bg-purple-600 px-5 py-2 rounded-lg hover:bg-purple-700 transition">
+        ← Back to Store
+    </a>
+</div>
+
+<!-- STATS -->
+<%
+let totalOrders = 0;
+let totalRevenue = 0;
+
+users.forEach(u => {
+    u.orders.forEach(o => {
+        totalOrders++;
+        o.items.forEach(i => {
+            totalRevenue += i.product.price * i.quantity;
+        });
+    });
+});
+%>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+
+    <div class="card p-6 rounded-xl">
+        <h2 class="text-gray-400">Total Orders</h2>
+        <p class="text-3xl font-bold text-yellow-400"><%= totalOrders %></p>
+    </div>
+
+    <div class="card p-6 rounded-xl">
+        <h2 class="text-gray-400">Total Revenue</h2>
+        <p class="text-3xl font-bold text-green-400">₹<%= totalRevenue %></p>
+    </div>
+
+    <div class="card p-6 rounded-xl">
+        <h2 class="text-gray-400">Total Users</h2>
+        <p class="text-3xl font-bold text-purple-400"><%= users.length %></p>
+    </div>
+
+</div>
+
+<!-- ORDERS -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto pr-2">
+
+<% users.forEach(user => { %>
+    <% user.orders.forEach(order => { %>
+
+        <div class="card p-6 rounded-2xl shadow-lg hover:shadow-2xl transition">
+
+            <!-- USER + STATUS -->
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-purple-300">
+                    👤 <%= user.fullname %>
+                </h2>
+
+                <span class="
+                    px-3 py-1 rounded-full text-sm font-semibold
+                    <%= order.status === 'Pending' ? 'bg-yellow-500 text-black' : '' %>
+                    <%= order.status === 'Shipped' ? 'bg-blue-500' : '' %>
+                    <%= order.status === 'Delivered' ? 'bg-green-500' : '' %>
+                ">
+                    <%= order.status %>
+                </span>
+            </div>
+
+            <!-- DATE -->
+            <p class="text-gray-400 text-sm mb-2">
+                🕒 <%= new Date(order.createdAt).toLocaleString() %>
+            </p>
+
+            <!-- PAYMENT INFO -->
+            <p class="text-sm mb-3">
+                💰 <%= order.paymentMethod %> |
+                <span class="<%= order.paymentStatus === 'Paid' ? 'text-green-400' : 'text-yellow-400' %>">
+                    <%= order.paymentStatus %>
+                </span>
+            </p>
+
+            <!-- ITEMS -->
+            <div class="space-y-2 border-t border-gray-700 pt-4">
+
+                <% let orderTotal = 0; %>
+
+                <% order.items.forEach(item => { 
+                    orderTotal += item.product.price * item.quantity;
+                %>
+
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-300">
+                        <%= item.product.name %>
+                    </span>
+
+                    <span class="text-yellow-400">
+                        x<%= item.quantity %>
+                    </span>
+                </div>
+
+                <% }) %>
+
+            </div>
+
+            <!-- TOTAL -->
+            <div class="flex justify-between mt-4 text-sm">
+                <span class="text-gray-400">Total</span>
+                <span class="text-green-400 font-semibold">
+                    ₹<%= orderTotal %>
+                </span>
+            </div>
+
+            <!-- UPDATE STATUS -->
+            <form method="POST" 
+                  action="/admin/update-order/<%= user._id %>/<%= order._id %>"
+                  class="mt-4 flex gap-2">
+
+                <select name="status"
+                        class="flex-1 text-black px-3 py-2 rounded-lg outline-none">
+
+                    <option <%= order.status==='Pending'?'selected':'' %>>Pending</option>
+                    <option <%= order.status==='Shipped'?'selected':'' %>>Shipped</option>
+                    <option <%= order.status==='Delivered'?'selected':'' %>>Delivered</option>
+
+                </select>
+
+                <button class="bg-green-500 px-4 py-2 rounded-lg hover:bg-green-600 transition">
+                    Update
+                </button>
+
+            </form>
+
+            <!-- ✅ COD MARK AS PAID (FIXED POSITION) -->
+            <% if(order.paymentMethod === "COD" && order.paymentStatus === "Pending"){ %>
+                <form method="POST" action="/admin/mark-paid/<%= user._id %>/<%= order._id %>">
+                    <button class="w-full bg-yellow-500 text-black px-3 py-2 rounded-lg mt-3 hover:bg-yellow-400">
+                        Mark as Paid 💰
+                    </button>
+                </form>
+            <% } %>
+
+        </div>
+
+    <% }) %>
+<% }) %>
+
+</div>
+
+</body>
+</html>

@@ -52,9 +52,12 @@ body {
         </form>
 
         <!-- ADMIN -->
-        <a href="/admin/orders" class="text-blue-500 hover:underline">
-            Admin
-        </a>
+        <% if(user && user.role === "admin"){ %>
+    <a href="/admin/orders" 
+       class="text-blue-500 hover:underline font-semibold">
+        Admin Panel ⚙️
+    </a>
+<% } %>
 
         <!-- CART -->
         <a href="/cart" class="relative bg-yellow-400 px-4 py-1 rounded text-white hover:scale-105 transition">

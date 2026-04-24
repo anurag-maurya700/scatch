@@ -293,24 +293,46 @@ app.get("/admin/orders", isloggedin, isAdmin, async (req, res) => {
     res.render("admin-orders", { users });
 });
 app.post("/admin/update-order/:userId/:orderId", isloggedin, isAdmin, async (req, res) => {
-    const { status } = req.body;
+    try {
+        const { status } = req.body;
 
-    let user = await User.findById(req.params.userId);
+        let user = await User.findById(req.params.userId);
+        let order = user.orders.id(req.params.orderId);
 
-    let order = user.orders.id(req.params.orderId);
+        if (!order) {
+            return res.json({ success: false });
+        }
 
-    if (order) {
         order.status = status;
+        order.manualUpdate = true; // ✅ add this
         await user.save();
-    }
 
-    res.redirect("/admin/orders");
+        res.json({ success: true, status });
+
+    } catch (err) {
+        console.log(err);
+        res.json({ success: false });
+    }
 });
 
 app.get("/product/:id", isloggedin, async (req, res) => {
-    const product = await productModel.findById(req.params.id);
+    try {
 
-    res.render("product-details", { product });
+        const product = await productModel.findById(req.params.id);
+
+        // 🔥 SIMILAR PRODUCTS LOGIC
+        const similarProducts = await productModel.find({
+            category: product.category,
+            _id: { $ne: product._id }
+        }).limit(4);
+
+        // ✅ SEND BOTH TO EJS
+        res.render("product-details", { product, similarProducts, user:req.user });
+
+    } catch (err) {
+        console.log(err);
+        res.send("Error loading product");
+    }
 });
 app.get("/track/:orderId", isloggedin, async (req, res) => {
 
@@ -393,20 +415,25 @@ io.on("connection", (socket) => {
         order.location = { lat, lng };
 
         // AUTO STATUS
-        if (order.status === "Pending") {
-            order.status = "Shipped";
+       // ✅ Only auto-update if still system-controlled
+if (order.status !== "Delivered") {
+
+    if (order.status === "Pending") {
+        order.status = "Shipped";
+    }
+
+    if (order.status === "Shipped") {
+        const destLat = 25.3176;
+        const destLng = 82.9739;
+
+        const distance = Math.abs(destLat - lat) + Math.abs(destLng - lng);
+
+        if (distance < 0.01) {
+            order.status = "Delivered";
         }
+    }
 
-        if (order.status === "Shipped") {
-            const destLat = 25.3176; // demo (later use real address)
-            const destLng = 82.9739;
-
-            const distance = Math.abs(destLat - lat) + Math.abs(destLng - lng);
-
-            if (distance < 0.01) {
-                order.status = "Delivered";
-            }
-        }
+}
 
         await user.save();
 
@@ -436,6 +463,89 @@ app.post("/profile/update", isloggedin, async (req, res) => {
 
     res.redirect("/profile");
 });
+app.post("/products/add-review/:id", async (req, res) => {
+    const { rating, comment } = req.body;
+
+    const product = await productModel.findById(req.params.id);
+
+    product.reviews.push({ rating, comment });
+
+    await product.save();
+
+    res.redirect("/product/" + req.params.id);
+});
+app.post("/products/ask-question/:id", isloggedin, async (req, res) => {
+
+    const { question } = req.body;
+
+    const product = await productModel.findById(req.params.id);
+
+    product.questions.push({
+        question,
+        askedBy: req.user.fullname   // ✅ store user name
+    });
+
+    await product.save();
+
+    res.redirect("/product/" + req.params.id);
+});
+app.post("/admin/answer/:productId/:qIndex", isloggedin, isAdmin, async (req, res) => {
+
+    const { answer } = req.body;
+
+    const product = await productModel.findById(req.params.productId);
+
+    const question = product.questions.id[req.params.qId];
+
+    if (!question) {
+        return res.redirect("/admin/products");
+    }
+
+    question.answer = answer;
+    question.answeredBy = req.user.fullname;
+
+    await product.save();
+
+    res.redirect("/product/" + req.params.productId);
+});
+app.post("/products/delete-question/:productId/:qId", isloggedin, async (req, res) => {
+
+    const product = await productModel.findById(req.params.productId);
+
+    const question = product.questions.id(req.params.qId);
+
+    if (!question) return res.redirect("back");
+
+    // ✅ Only allow:
+    // - user who asked
+    // - OR admin
+    if (
+        question.askedBy === req.user.fullname ||
+        req.user.role === "admin"
+    ) {
+        question.deleteOne();
+        await product.save();
+    }
+
+    res.redirect("/product/" + req.params.productId);
+});
+app.post("/admin/delete-answer/:productId/:qId", isloggedin, isAdmin, async (req, res) => {
+
+    const product = await productModel.findById(req.params.productId);
+
+    const question = product.questions.id(req.params.qId);
+
+    if (!question) return res.redirect("back");
+
+    // ❌ remove only answer (not question)
+    question.answer = undefined;
+    question.answeredBy = undefined;
+
+    await product.save();
+
+    res.redirect("/product/" + req.params.productId);
+});
+
 
 const PORT = process.env.PORT || 3000;
 

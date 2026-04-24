@@ -20,12 +20,10 @@ body {
 
 <!-- HEADER -->
 <div class="flex justify-between items-center mb-10">
-    <h1 class="text-4xl font-bold tracking-wide">
-        📊 Admin Dashboard
-    </h1>
+    <h1 class="text-4xl font-bold">📊 Admin Dashboard</h1>
 
     <a href="/home"
-       class="bg-purple-600 px-5 py-2 rounded-lg hover:bg-purple-700 transition">
+       class="bg-purple-600 px-5 py-2 rounded-lg hover:bg-purple-700">
         ← Back to Store
     </a>
 </div>
@@ -45,128 +43,158 @@ users.forEach(u => {
 });
 %>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+<div class="grid md:grid-cols-3 gap-6 mb-10">
 
     <div class="card p-6 rounded-xl">
         <h2 class="text-gray-400">Total Orders</h2>
-        <p class="text-3xl font-bold text-yellow-400"><%= totalOrders %></p>
+        <p class="text-3xl text-yellow-400 font-bold"><%= totalOrders %></p>
     </div>
 
     <div class="card p-6 rounded-xl">
-        <h2 class="text-gray-400">Total Revenue</h2>
-        <p class="text-3xl font-bold text-green-400">₹<%= totalRevenue %></p>
+        <h2 class="text-gray-400">Revenue</h2>
+        <p class="text-3xl text-green-400 font-bold">₹<%= totalRevenue %></p>
     </div>
 
     <div class="card p-6 rounded-xl">
-        <h2 class="text-gray-400">Total Users</h2>
-        <p class="text-3xl font-bold text-purple-400"><%= users.length %></p>
+        <h2 class="text-gray-400">Users</h2>
+        <p class="text-3xl text-purple-400 font-bold"><%= users.length %></p>
     </div>
 
 </div>
 
 <!-- ORDERS -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto pr-2">
+<div class="grid md:grid-cols-2 gap-6">
 
 <% users.forEach(user => { %>
     <% user.orders.forEach(order => { %>
 
-        <div class="card p-6 rounded-2xl shadow-lg hover:shadow-2xl transition">
+<div class="card p-6 rounded-xl">
 
-            <!-- USER + STATUS -->
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold text-purple-300">
-                    👤 <%= user.fullname %>
-                </h2>
+    <!-- USER -->
+    <div class="flex justify-between mb-3">
+        <h2 class="text-purple-300">👤 <%= user.fullname %></h2>
 
-                <span class="
-                    px-3 py-1 rounded-full text-sm font-semibold
-                    <%= order.status === 'Pending' ? 'bg-yellow-500 text-black' : '' %>
-                    <%= order.status === 'Shipped' ? 'bg-blue-500' : '' %>
-                    <%= order.status === 'Delivered' ? 'bg-green-500' : '' %>
-                ">
-                    <%= order.status %>
-                </span>
-            </div>
+        <span class="status-badge px-3 py-1 rounded-full text-sm font-semibold
+            <%= order.status === 'Pending' ? 'bg-yellow-500 text-black' : '' %>
+            <%= order.status === 'Shipped' ? 'bg-blue-500' : '' %>
+            <%= order.status === 'Delivered' ? 'bg-green-500' : '' %>
+        ">
+            <%= order.status %>
+        </span>
+    </div>
 
-            <!-- DATE -->
-            <p class="text-gray-400 text-sm mb-2">
-                🕒 <%= new Date(order.createdAt).toLocaleString() %>
-            </p>
+    <!-- DATE -->
+    <p class="text-gray-400 text-sm mb-2">
+        🕒 <%= new Date(order.createdAt).toLocaleString() %>
+    </p>
 
-            <!-- PAYMENT INFO -->
-            <p class="text-sm mb-3">
-                💰 <%= order.paymentMethod %> |
-                <span class="<%= order.paymentStatus === 'Paid' ? 'text-green-400' : 'text-yellow-400' %>">
-                    <%= order.paymentStatus %>
-                </span>
-            </p>
+    <!-- PAYMENT -->
+    <p class="text-sm mb-3">
+        💰 <%= order.paymentMethod %> |
+        <span class="<%= order.paymentStatus === 'Paid' ? 'text-green-400' : 'text-yellow-400' %>">
+            <%= order.paymentStatus %>
+        </span>
+    </p>
 
-            <!-- ITEMS -->
-            <div class="space-y-2 border-t border-gray-700 pt-4">
+    <!-- ITEMS -->
+    <div class="border-t pt-3 space-y-1">
 
-                <% let orderTotal = 0; %>
+        <% let total = 0; %>
 
-                <% order.items.forEach(item => { 
-                    orderTotal += item.product.price * item.quantity;
-                %>
+        <% order.items.forEach(item => { 
+            total += item.product.price * item.quantity;
+        %>
 
-                <div class="flex justify-between text-sm">
-                    <span class="text-gray-300">
-                        <%= item.product.name %>
-                    </span>
-
-                    <span class="text-yellow-400">
-                        x<%= item.quantity %>
-                    </span>
-                </div>
-
-                <% }) %>
-
-            </div>
-
-            <!-- TOTAL -->
-            <div class="flex justify-between mt-4 text-sm">
-                <span class="text-gray-400">Total</span>
-                <span class="text-green-400 font-semibold">
-                    ₹<%= orderTotal %>
-                </span>
-            </div>
-
-            <!-- UPDATE STATUS -->
-            <form method="POST" 
-                  action="/admin/update-order/<%= user._id %>/<%= order._id %>"
-                  class="mt-4 flex gap-2">
-
-                <select name="status"
-                        class="flex-1 text-black px-3 py-2 rounded-lg outline-none">
-
-                    <option <%= order.status==='Pending'?'selected':'' %>>Pending</option>
-                    <option <%= order.status==='Shipped'?'selected':'' %>>Shipped</option>
-                    <option <%= order.status==='Delivered'?'selected':'' %>>Delivered</option>
-
-                </select>
-
-                <button class="bg-green-500 px-4 py-2 rounded-lg hover:bg-green-600 transition">
-                    Update
-                </button>
-
-            </form>
-
-            <!-- ✅ COD MARK AS PAID (FIXED POSITION) -->
-            <% if(order.paymentMethod === "COD" && order.paymentStatus === "Pending"){ %>
-                <form method="POST" action="/admin/mark-paid/<%= user._id %>/<%= order._id %>">
-                    <button class="w-full bg-yellow-500 text-black px-3 py-2 rounded-lg mt-3 hover:bg-yellow-400">
-                        Mark as Paid 💰
-                    </button>
-                </form>
-            <% } %>
-
+        <div class="flex justify-between text-sm">
+            <span><%= item.product.name %></span>
+            <span>x<%= item.quantity %></span>
         </div>
+
+        <% }) %>
+
+    </div>
+
+    <!-- TOTAL -->
+    <div class="flex justify-between mt-3">
+        <span>Total</span>
+        <span class="text-green-400">₹<%= total %></span>
+    </div>
+
+    <!-- AJAX STATUS UPDATE -->
+    <select 
+        onchange="updateStatus(this, '<%= user._id %>', '<%= order._id %>')"
+        class="w-full mt-4 text-black px-3 py-2 rounded">
+
+        <option value="Pending" <%= order.status==='Pending'?'selected':'' %>>Pending</option>
+        <option value="Shipped" <%= order.status==='Shipped'?'selected':'' %>>Shipped</option>
+        <option value="Delivered" <%= order.status==='Delivered'?'selected':'' %>>Delivered</option>
+
+    </select>
+
+    <!-- COD BUTTON -->
+    <% if(order.paymentMethod === "COD" && order.paymentStatus === "Pending"){ %>
+        <form method="POST" action="/admin/mark-paid/<%= user._id %>/<%= order._id %>">
+            <button class="w-full mt-3 bg-yellow-500 text-black py-2 rounded">
+                Mark as Paid 💰
+            </button>
+        </form>
+    <% } %>
+
+</div>
 
     <% }) %>
 <% }) %>
 
 </div>
+
+<!-- JS -->
+<script>
+async function updateStatus(select, userId, orderId) {
+
+    const status = select.value;
+
+    const res = await fetch(`/admin/update-order/${userId}/${orderId}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ status })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+
+        const card = select.closest(".card");
+        const badge = card.querySelector(".status-badge");
+
+        badge.innerText = status;
+
+        badge.className = `
+            status-badge px-3 py-1 rounded-full text-sm font-semibold
+            ${status === 'Pending' ? 'bg-yellow-500 text-black' : ''}
+            ${status === 'Shipped' ? 'bg-blue-500' : ''}
+            ${status === 'Delivered' ? 'bg-green-500' : ''}
+        `;
+
+        showToast("Updated ✅");
+
+    } else {
+        alert("Update failed");
+    }
+}
+
+function showToast(msg) {
+    const toast = document.createElement("div");
+    toast.innerText = msg;
+
+    toast.className = "fixed bottom-5 right-5 bg-green-500 px-4 py-2 rounded";
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => toast.remove(), 2000);
+}
+</script>
 
 </body>
 </html>

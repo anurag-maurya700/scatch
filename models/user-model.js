@@ -44,6 +44,18 @@ const userSchema = mongoose.Schema({
       addressLine: String,
       landmark: String
     },
+      status: {
+      type: String,
+      enum: ["Pending", "Shipped", "Delivered"],
+      default: "Pending"
+    },
+
+    // ✅ ADD THIS (for socket fix)
+    manualUpdate: {
+      type: Boolean,
+      default: false
+    },
+
    paymentMethod: {
     type: String,
     default: "COD"

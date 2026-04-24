@@ -1,12 +1,10 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <title><%= product.name %></title>
 
 <script src="https://cdn.tailwindcss.com"></script>
-
 <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
 
 <style>
@@ -20,50 +18,45 @@ body {
 
 <body>
 
-<!-- 🔵 NAVBAR -->
-
+<!-- NAVBAR -->
 <div class="bg-blue-600 text-white px-6 py-3 flex justify-between">
     <h1 class="font-bold text-lg">MyStore</h1>
-
-```
-<div class="flex gap-6">
-    <a href="/home">Home</a>
-    <a href="/cart">Cart</a>
-</div>
-```
-
+    <div class="flex gap-6">
+        <a href="/home">Home</a>
+        <a href="/cart">Cart</a>
+    </div>
 </div>
 
-<!-- 🛍 PRODUCT -->
-
+<!-- PRODUCT -->
 <div class="max-w-7xl mx-auto mt-6 bg-white p-6 rounded shadow grid md:grid-cols-2 gap-8">
 
-```
-<!-- LEFT: IMAGE -->
+<!-- IMAGE -->
 <div>
-
-    <!-- MAIN IMAGE -->
     <img id="mainImage" src="<%= product.image %>"
          class="w-full h-96 object-cover rounded border">
 
-    <!-- THUMBNAILS (demo static) -->
     <div class="flex gap-3 mt-4">
-        <img src="<%= product.image %>"
-             onclick="changeImage(this.src)"
-             class="w-20 h-20 object-cover border cursor-pointer hover:border-blue-500">
-        <img src="<%= product.image %>"
-             onclick="changeImage(this.src)"
-             class="w-20 h-20 object-cover border cursor-pointer hover:border-blue-500">
+        <img src="<%= product.image %>" onclick="changeImage(this.src)"
+             class="w-20 h-20 border cursor-pointer">
     </div>
-
 </div>
 
-<!-- RIGHT: DETAILS -->
+<!-- DETAILS -->
 <div>
 
     <h1 class="text-2xl font-semibold text-gray-800">
         <%= product.name %>
     </h1>
+
+    <!-- ⭐ RATING -->
+    <div class="flex items-center mt-2">
+        <span class="bg-green-500 text-white px-2 py-1 rounded text-sm">
+            ⭐ <%= product.avgRating || 4.2 %>
+        </span>
+        <span class="ml-2 text-gray-600 text-sm">
+            (<%= product.reviews ? product.reviews.length : 0 %> reviews)
+        </span>
+    </div>
 
     <!-- PRICE -->
     <div class="mt-3">
@@ -73,56 +66,194 @@ body {
         <span class="line-through text-gray-400 ml-2">
             ₹<%= product.price + 200 %>
         </span>
-        <span class="text-green-500 ml-2 text-sm">
-            20% off
-        </span>
     </div>
 
-    <!-- DELIVERY -->
     <p class="mt-4 text-sm text-gray-600">
-        🚚 Free Delivery | 💰 Cash on Delivery Available
-    </p>
-
-    <!-- DESCRIPTION -->
-    <p class="mt-4 text-gray-700">
-        Premium handmade product crafted with love ❤️  
-        High quality & best for gifting.
+        🚚 Free Delivery | 💰 COD Available
     </p>
 
     <!-- BUTTONS -->
     <div class="flex gap-4 mt-6">
-
         <button onclick="addToCart('<%= product._id %>')"
-            class="bg-yellow-400 px-6 py-3 rounded font-semibold hover:bg-yellow-500">
+            class="bg-yellow-400 px-6 py-3 rounded font-semibold">
             Add to Cart 🛒
         </button>
 
-        <button onclick="buyNow('<%= product._id %>')"
-            class="bg-orange-500 text-white px-6 py-3 rounded font-semibold hover:bg-orange-600">
+        <button onclick="buyNow()"
+            class="bg-orange-500 text-white px-6 py-3 rounded font-semibold">
             Buy Now ⚡
         </button>
-
     </div>
 
 </div>
-```
 
 </div>
 
-<!-- 🔻 EXTRA SECTION -->
-
+<!-- ⭐ REVIEWS SECTION -->
 <div class="max-w-7xl mx-auto mt-6 bg-white p-6 rounded shadow">
 
-```
-<h2 class="text-lg font-semibold mb-3">Product Details</h2>
+<h2 class="text-lg font-semibold mb-4">Ratings & Reviews</h2>
 
-<ul class="text-sm text-gray-700 space-y-2">
-    <li>✔ Handmade & Premium Quality</li>
-    <li>✔ Safe Packaging</li>
-    <li>✔ Long Lasting Product</li>
-    <li>✔ Perfect for gifting</li>
-</ul>
-```
+<!-- EXISTING REVIEWS -->
+<% if(product.reviews && product.reviews.length){ %>
+
+    <% product.reviews.forEach(r => { %>
+        <div class="border-b py-3">
+            <p class="text-yellow-500">⭐ <%= r.rating %></p>
+            <p class="text-gray-800"><%= r.comment %></p>
+        </div>
+    <% }) %>
+
+<% } else { %>
+    <p class="text-gray-500">No reviews yet</p>
+<% } %>
+
+<!-- ADD REVIEW -->
+<form method="POST" action="/products/add-review/<%= product._id %>" class="mt-6">
+
+    <h3 class="font-semibold mb-2">Add Review</h3>
+
+    <select name="rating" class="border p-2 rounded w-full mb-3">
+        <option value="5">⭐⭐⭐⭐⭐</option>
+        <option value="4">⭐⭐⭐⭐</option>
+        <option value="3">⭐⭐⭐</option>
+        <option value="2">⭐⭐</option>
+        <option value="1">⭐</option>
+    </select>
+
+    <textarea name="comment" placeholder="Write your review..."
+        class="w-full border p-2 rounded mb-3"></textarea>
+
+    <button class="bg-blue-500 text-white px-4 py-2 rounded">
+        Submit Review
+    </button>
+
+</form>
+
+</div>
+
+<!-- ❓ Q&A SECTION -->
+<div class="max-w-7xl mx-auto mt-6 bg-white p-6 rounded shadow">
+
+<h2 class="text-lg font-semibold mb-4">Questions & Answers</h2>
+
+<% if(product.questions && product.questions.length){ %>
+
+    <% product.questions.forEach((q, index) => { %>
+
+        <div class="border-b py-3">
+
+            <p class="font-medium">
+                ❓ <%= q.question %>
+            </p>
+
+            <p class="text-sm text-gray-500">
+                Asked by: <%= q.askedBy || "User" %>
+            </p>
+             <!-- DELETE QUESTION -->
+    <% if(user.fullname === q.askedBy || user.role === "admin"){ %>
+
+        <form method="POST"
+              action="/products/delete-question/<%= product._id %>/<%= q._id %>">
+            <button class="text-red-500 text-xs mt-1">
+                🗑 Delete Question
+            </button>
+        </form>
+
+    <% } %>
+
+            <% if(q.answer){ %>
+
+                <p class="text-green-600 mt-1">
+                    ✅ <%= q.answer %>
+                </p>
+
+                <p class="text-xs text-gray-400">
+                    Answered by: <%= q.answeredBy || "Admin" %>
+                </p>
+                   <!-- ADMIN DELETE ANSWER -->
+        <% if(user.role === "admin"){ %>
+
+        <form method="POST"
+              action="/admin/delete-answer/<%= product._id %>/<%= q._id %>">
+            <button class="text-red-400 text-xs">
+                Remove Answer
+            </button>
+        </form>
+
+        <% } %>
+
+
+            <% } else { %>
+
+                <p class="text-red-500 text-sm mt-1">
+                    No answer yet
+                </p>
+
+                <!-- 🔥 ADMIN ANSWER FORM -->
+                <% if(user.role === "admin"){ %>
+
+                <form method="POST"
+                      action="/admin/answer/<%= product._id %>/<%= index %>"
+                      class="mt-2 flex gap-2">
+
+                    <input type="text" name="answer"
+                        placeholder="Write answer..."
+                        class="flex-1 border p-2 rounded text-black">
+
+                    <button class="bg-green-500 text-white px-3 rounded">
+                        Reply
+                    </button>
+
+                </form>
+
+                <% } %>
+
+            <% } %>
+
+        </div>
+
+    <% }) %>
+
+<% } else { %>
+    <p>No questions yet</p>
+<% } %>
+<!-- ASK QUESTION -->
+<form method="POST" action="/products/ask-question/<%= product._id %>" class="mt-4">
+
+    <input type="text" name="question"
+        placeholder="Ask something..."
+        class="w-full border p-2 rounded mb-3">
+
+    <button class="bg-purple-500 text-white px-4 py-2 rounded">
+        Ask Question
+    </button>
+
+</form>
+
+</div>
+
+<!-- 🛍 SIMILAR PRODUCTS -->
+<div class="max-w-7xl mx-auto mt-6">
+
+<h2 class="text-lg font-semibold mb-4">Similar Products</h2>
+
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+<% similarProducts.forEach(p => { %>
+
+    <a href="/product/<%= p._id %>" class="bg-white p-3 rounded shadow hover:shadow-lg">
+
+        <img src="<%= p.image %>" class="h-40 w-full object-cover rounded">
+
+        <h3 class="text-sm mt-2"><%= p.name %></h3>
+        <p class="text-green-600 font-semibold">₹<%= p.price %></p>
+
+    </a>
+
+<% }) %>
+
+</div>
 
 </div>
 
@@ -131,20 +262,13 @@ function changeImage(src) {
     document.getElementById("mainImage").src = src;
 }
 
-async function addToCart(productId) {
-
-    const res = await fetch(`/products/add-to-cart-ajax/${productId}`, {
-        method: "POST"
-    });
-
+async function addToCart(id) {
+    const res = await fetch(`/products/add-to-cart-ajax/${id}`, { method: "POST" });
     const data = await res.json();
-
-    if (data.success) {
-        alert("Added to cart ✅");
-    }
+    if(data.success) alert("Added to cart ✅");
 }
 
-function buyNow(productId) {
+function buyNow() {
     window.location.href = "/checkout";
 }
 </script>

@@ -9,6 +9,21 @@ const productSchema = mongoose.Schema({
     type: Number,
     default: 0,
   },
+  reviews: [
+  {
+    rating: Number,
+    comment: String
+  }
+],
+
+questions: [
+  {
+    question: String,
+    answer: String,
+    askedBy: String,
+    answeredBy: String
+  }
+],
   bgcolor: String,
   pannelcolor: String,
   textcolor: String,

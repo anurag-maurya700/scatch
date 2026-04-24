@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -6,272 +7,159 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-
 <style>
 body {
+    background: #f1f3f6;
     font-family: 'Poppins', sans-serif;
-    background: radial-gradient(circle at top, #1e1b4b, #020617);
-}
-.heading {
-    font-family: 'Playfair Display', serif;
-}
-.glass {
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(14px);
-    border: 1px solid rgba(255,255,255,0.08);
 }
 </style>
 
 </head>
 
-<body class="text-white px-6 py-10">
+<body class="p-6">
 
 <!-- HEADER -->
-<div class="max-w-6xl mx-auto mb-10 flex justify-between items-center">
-    <h1 class="text-4xl font-bold heading text-purple-300">
-        💳 Checkout
-    </h1>
 
-    <a href="/cart"
-       class="bg-gray-700 px-4 py-2 rounded-lg hover:bg-gray-600 transition">
-        ← Back to Cart
-    </a>
+<div class="max-w-6xl mx-auto mb-6 flex justify-between">
+    <h1 class="text-2xl font-bold">Checkout</h1>
+    <a href="/cart" class="text-blue-500">← Back to Cart</a>
 </div>
 
-<div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-10">
+<div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-6">
 
-<!-- LEFT SIDE -->
+<!-- LEFT -->
+
 <div class="md:col-span-2 space-y-6">
 
-    <!-- ADDRESS LIST -->
-    <div class="glass p-6 rounded-2xl shadow-lg">
-        <h2 class="text-xl mb-4 font-semibold text-purple-200">
-            📍 Select Delivery Address
-        </h2>
+<!-- ADDRESS -->
+<!-- ADDRESS -->
 
-        <% if(user.addresses.length > 0){ %>
+<div class="bg-white p-6 rounded shadow">
+    <h2 class="font-semibold mb-4">Select Delivery Address</h2>
 
-            <% user.addresses.forEach((addr, index) => { %>
+<% if(user.addresses.length === 0){ %>
 
-            <div class="bg-gray-800/60 p-4 rounded-xl mb-3 flex justify-between items-start">
-
-                <label class="flex gap-4 cursor-pointer">
-                    <input 
-                        type="radio" 
-                        name="address" 
-                        value="<%= index %>" 
-                        class="mt-1"
-                        <%= index === 0 ? "checked" : "" %>
-                    >
-
-                    <div>
-                        <p class="font-medium"><%= addr.fullname %> | <%= addr.phone %></p>
-                        <p class="text-sm text-gray-300"><%= addr.addressLine %>, <%= addr.city %></p>
-                        <p class="text-sm text-gray-400"><%= addr.state %> - <%= addr.pincode %></p>
-                    </div>
-                </label>
-
-                <!-- ❌ DELETE BUTTON FIXED -->
-                <form method="POST" action="/delete-address/<%= index %>">
-                    <button class="text-red-400 text-sm hover:underline">
-                        Delete ❌
-                    </button>
-                </form>
-
-            </div>
-
-            <% }) %>
-
-        <% } else { %>
-            <p class="text-gray-400">No address found. Add one below 👇</p>
-        <% } %>
+    <!-- ❌ NO ADDRESS -->
+    <div class="text-center text-gray-500">
+        <p class="mb-3">No address found ❌</p>
+        <a href="/profile" class="bg-blue-500 text-white px-4 py-2 rounded">
+            Add Address
+        </a>
     </div>
 
-    <!-- ADD ADDRESS -->
-    <div class="glass p-6 rounded-2xl shadow-lg">
-        <h3 class="text-lg mb-4 text-blue-300 font-semibold">
-            ➕ Add New Address
-        </h3>
+<% } else { %>
 
-        <form method="POST" action="/add-address" class="grid grid-cols-2 gap-3">
+    <% user.addresses.forEach((addr, index) => { %>
 
-            <input name="fullname" required placeholder="Full Name" class="col-span-2 text-black p-2 rounded">
-            <input name="phone" required placeholder="Phone" class="text-black p-2 rounded">
-            <input name="pincode" required placeholder="Pincode" class="text-black p-2 rounded">
-            <input name="city" required placeholder="City" class="text-black p-2 rounded">
-            <input name="state" required placeholder="State" class="text-black p-2 rounded">
-            <input name="addressLine" required placeholder="Address" class="col-span-2 text-black p-2 rounded">
-            <input name="landmark" placeholder="Landmark" class="col-span-2 text-black p-2 rounded">
+    <label class="flex gap-3 border p-3 mb-3 rounded cursor-pointer hover:border-blue-500">
 
-            <button class="col-span-2 bg-blue-500 py-2 rounded-lg hover:bg-blue-600 transition">
-                Save Address
-            </button>
+        <input 
+            type="radio" 
+            name="address" 
+            value="<%= index %>" 
+            class="mt-1"
+            <%= index===0 ? "checked" : "" %>
+        >
 
-        </form>
-    </div>
+        <div>
+            <p class="font-medium">
+                <%= addr.fullname %> | <%= addr.phone %>
+            </p>
+
+            <p class="text-sm text-gray-600">
+                <%= addr.addressLine %>, <%= addr.city %>
+            </p>
+
+            <p class="text-xs text-gray-500">
+                <%= addr.state %> - <%= addr.pincode %>
+            </p>
+        </div>
+
+    </label>
+
+    <% }) %>
+
+<% } %>
 
 </div>
 
-<!-- RIGHT SIDE -->
-<div class="sticky top-10 h-fit">
 
-    <div class="glass p-6 rounded-2xl shadow-xl">
+<!-- PAYMENT METHOD -->
+<div class="bg-white p-6 rounded shadow">
+    <h2 class="font-semibold mb-4">Payment Method</h2>
 
-        <h2 class="text-lg mb-4 text-purple-200 font-semibold">
-            🧾 Order Summary
-        </h2>
+    <label class="block mb-3">
+        <input type="radio" name="payment" value="ONLINE" checked>
+        Pay Online (UPI / Card / Netbanking)
+    </label>
 
-        <% let total = 0; %>
+    <label class="block">
+        <input type="radio" name="payment" value="COD">
+        Cash on Delivery
+    </label>
+</div>
 
-        <div class="space-y-3 max-h-64 overflow-y-auto">
+</div>
 
-        <% user.cart.forEach(item => { 
-            total += item.product.price * item.quantity;
-        %>
+<!-- RIGHT -->
 
-        <div class="flex justify-between text-sm border-b border-gray-700 pb-2">
+<div class="bg-white p-6 rounded shadow h-fit">
 
-            <span>
-                <%= item.product.name %> × <%= item.quantity %>
-            </span>
+<h2 class="font-semibold mb-4">Order Summary</h2>
 
-            <span class="text-yellow-400">
-                ₹<%= item.product.price * item.quantity %>
-            </span>
+<% let total = 0; %>
 
-        </div>
+<% user.cart.forEach(item => { 
+    total += item.product.price * item.quantity;
+%>
 
-        <% }) %>
+<div class="flex justify-between text-sm mb-2">
+    <span><%= item.product.name %> x <%= item.quantity %></span>
+    <span>₹<%= item.product.price * item.quantity %></span>
+</div>
 
-        </div>
+<% }) %>
 
-        <!-- TOTAL -->
-        <div class="flex justify-between mt-6 text-xl font-semibold">
-            <span>Total</span>
-            <span class="text-green-400">₹<%= total %></span>
-        </div>
-        
+<hr class="my-4">
 
-        <!-- PAY -->
-     <div class="space-y-3 mt-6">
+<div class="flex justify-between font-bold text-lg">
+    <span>Total</span>
+    <span>₹<%= total %></span>
+</div>
 
-<button onclick="payNow()"
-class="w-full bg-green-500 py-3 rounded-xl font-semibold">
-💳 Pay Online
-</button>
-
-<button onclick="placeCOD()"
-class="w-full bg-yellow-400 py-3 rounded-xl font-semibold text-black">
-💰 Cash on Delivery
+<!-- PLACE ORDER -->
+<button onclick="placeOrder()"
+    class="w-full mt-6 bg-orange-500 text-white py-3 rounded font-semibold hover:bg-orange-600">
+    Place Order
 </button>
 
 </div>
 
-    </div>
-
 </div>
 
-</div>
+<!-- RAZORPAY -->
 
-<!-- PAYMENT -->
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <script>
-async function payNow() {
+async function placeOrder() {
 
-    const selectedAddress = document.querySelector("input[name='address']:checked");
+    const address = document.querySelector("input[name='address']:checked");
+    const payment = document.querySelector("input[name='payment']:checked");
 
-    if (!selectedAddress) {
-        alert("⚠️ Please select address");
+    if (!address) {
+        alert("Select address");
         return;
     }
 
-    try {
-        const res = await fetch("/create-order", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                addressIndex: selectedAddress.value
-            })
-        });
+    // 🔥 COD FLOW
+    if (payment.value === "COD") {
 
-        const data = await res.json();
-
-        if (!data.success) {
-            alert("Order creation failed");
-            return;
-        }
-
-        const options = {
-            key: data.key,
-            amount: data.order.amount,
-            currency: "INR",
-            name: "MyStore",
-            description: "Test Payment",
-            order_id: data.order.id,
-
-            handler: async function (response) {
-
-                await fetch("/verify-payment", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(response)
-                });
-
-                window.location.href = "/success";
-            },
-                method: {
-    card: true,
-    upi: false,
-    wallet: false,
-    netbanking: true,
-    emi: false,
-    paylater: false
-},
-
-    prefill: {
-        name: "Test User",
-        email: "test@test.com",
-        contact: "9999999999"
-    },
-
-    theme: {
-        color: "#6366f1"
-    }
-        };
-
-        const rzp = new Razorpay(options);
-        rzp.open();
-
-    } catch (err) {
-        alert("Payment error ❌");
-        console.log(err);
-    }
-}
-</script>
-<script>
-async function placeCOD() {
-
-    const selectedAddress = document.querySelector("input[name='address']:checked");
-
-    if (!selectedAddress) {
-        alert("⚠️ Please select address");
-        return;
-    }
-
-    try {
         const res = await fetch("/cod-order", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                addressIndex: selectedAddress.value
+                addressIndex: address.value
             })
         });
 
@@ -279,14 +167,47 @@ async function placeCOD() {
 
         if (data.success) {
             window.location.href = "/success";
-        } else {
-            alert("COD order failed ❌");
         }
 
-    } catch (err) {
-        console.log(err);
-        alert("Error placing COD order");
+        return;
     }
+
+    // 🔥 ONLINE PAYMENT FLOW
+    const res = await fetch("/create-order", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            addressIndex: address.value
+        })
+    });
+
+    const data = await res.json();
+
+    const options = {
+        key: data.key,
+        amount: data.order.amount,
+        currency: "INR",
+        name: "MyStore",
+        order_id: data.order.id,
+
+        handler: async function (response) {
+
+            await fetch("/verify-payment", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(response)
+            });
+
+            window.location.href = "/success";
+        }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
 }
 </script>
 

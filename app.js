@@ -121,67 +121,90 @@ const razorpay = new Razorpay({
 });
 app.post("/create-order", isloggedin, async (req, res) => {
 
-    const { addressIndex } = req.body;
+    try {
+        const index = Number(req.body.addressIndex); // ✅ FIX
 
-    const user = await User.findById(req.user._id)
-        .populate("cart.product");
+        const user = await User.findById(req.user._id)
+            .populate("cart.product");
 
-    if (!user.cart.length) {
-        return res.json({ success: false });
+        if (!user.cart.length) {
+            return res.json({ success: false, message: "Cart empty" });
+        }
+
+        const selectedAddress = user.addresses[index];
+
+        // ❌ address undefined fix
+        if (!selectedAddress) {
+            return res.json({ success: false, message: "Invalid address" });
+        }
+
+        let total = 0;
+        user.cart.forEach(item => {
+            total += item.product.price * item.quantity;
+        });
+
+        const order = await razorpay.orders.create({
+            amount: total * 100,
+            currency: "INR",
+            receipt: "order_" + Date.now(),
+        });
+
+        // ✅ SAVE IN SESSION
+        req.session.orderData = {
+            address: selectedAddress,
+            items: user.cart,
+            total
+        };
+
+        res.json({
+            success: true,
+            order,
+            key: process.env.RAZORPAY_KEY_ID
+        });
+
+    } catch (err) {
+        console.log(err);
+        res.json({ success: false, message: "Order failed" });
     }
-
-    const selectedAddress = user.addresses[addressIndex];
-
-    let total = 0;
-
-    user.cart.forEach(item => {
-        total += item.product.price * item.quantity;
-    });
-
-    const order = await razorpay.orders.create({
-        amount: total * 100,
-        currency: "INR",
-        receipt: "order_" + Date.now(),
-    });
-
-    // ✅ USE SESSION (BETTER THAN tempAddress)
-    req.session.orderData = {
-        address: selectedAddress,
-        items: user.cart,
-        total
-    };
-
-    res.json({
-        success: true,
-        order,
-        key: process.env.RAZORPAY_KEY_ID
-    });
 });
 app.post("/cod-order", isloggedin, async (req, res) => {
 
-    const user = await User.findById(req.user._id)
-        .populate("cart.product");
+    try {
+        const index = Number(req.body.addressIndex); // ✅ FIX
 
-    const address = user.addresses[req.body.addressIndex];
+        const user = await User.findById(req.user._id)
+            .populate("cart.product");
 
-    let total = 0;
-    user.cart.forEach(item => {
-        total += item.product.price * item.quantity;
-    });
+        const address = user.addresses[index];
 
-    user.orders.push({
-        items: user.cart,
-        address,
-        total,
-        status: "Pending",
-        paymentMethod: "COD",
-        paymentStatus: "Pending"
-    });
+        // ❌ prevent crash
+        if (!address) {
+            return res.json({ success: false, message: "Invalid address" });
+        }
 
-    user.cart = [];
-    await user.save();
+        let total = 0;
+        user.cart.forEach(item => {
+            total += item.product.price * item.quantity;
+        });
 
-    res.json({ success: true });
+        user.orders.push({
+            items: user.cart,
+            address,
+            total,
+            status: "Pending",
+            paymentMethod: "COD",
+            paymentStatus: "Pending"
+        });
+
+        user.cart = [];
+        await user.save();
+
+        res.json({ success: true });
+
+    } catch (err) {
+        console.log(err);
+        res.json({ success: false, message: "COD failed" });
+    }
 });
 app.post("/online-order", isloggedin, async (req, res) => {
 

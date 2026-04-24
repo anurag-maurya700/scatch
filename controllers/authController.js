@@ -28,12 +28,17 @@ module.exports.registerUser = async function (req, res) {
 
     let token = generateToken(user);
 
-    res.cookie("token", token, { httpOnly: true });
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none"
+    });
 
     res.json({ success: true, message: "Account created successfully" });
 
   } catch (err) {
-    res.json({ success: false, message: "Something went wrong" });
+    console.log(err);
+    res.json({ success: false, message: err.message });
   }
 };
 module.exports.loginUser = async function (req, res) {

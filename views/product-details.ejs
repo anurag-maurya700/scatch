@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -11,47 +12,142 @@
 <style>
 body {
     font-family: 'Poppins', sans-serif;
-    background: linear-gradient(135deg, #0f172a, #1e1b4b);
+    background: #f1f3f6;
 }
 </style>
 
 </head>
 
-<body class="text-white p-10">
+<body>
 
-<a href="/home" class="text-purple-400 hover:underline">← Back</a>
+<!-- 🔵 NAVBAR -->
 
-<div class="max-w-5xl mx-auto mt-10 grid md:grid-cols-2 gap-10">
+<div class="bg-blue-600 text-white px-6 py-3 flex justify-between">
+    <h1 class="font-bold text-lg">MyStore</h1>
 
-    <!-- IMAGE -->
-    <img src="<%= product.image %>" 
-         class="rounded-2xl shadow-lg w-full h-96 object-cover">
+```
+<div class="flex gap-6">
+    <a href="/home">Home</a>
+    <a href="/cart">Cart</a>
+</div>
+```
 
-    <!-- DETAILS -->
-    <div class="space-y-6">
+</div>
 
-        <h1 class="text-4xl font-bold text-purple-300">
-            <%= product.name %>
-        </h1>
+<!-- 🛍 PRODUCT -->
 
-        <p class="text-2xl text-green-400 font-semibold">
+<div class="max-w-7xl mx-auto mt-6 bg-white p-6 rounded shadow grid md:grid-cols-2 gap-8">
+
+```
+<!-- LEFT: IMAGE -->
+<div>
+
+    <!-- MAIN IMAGE -->
+    <img id="mainImage" src="<%= product.image %>"
+         class="w-full h-96 object-cover rounded border">
+
+    <!-- THUMBNAILS (demo static) -->
+    <div class="flex gap-3 mt-4">
+        <img src="<%= product.image %>"
+             onclick="changeImage(this.src)"
+             class="w-20 h-20 object-cover border cursor-pointer hover:border-blue-500">
+        <img src="<%= product.image %>"
+             onclick="changeImage(this.src)"
+             class="w-20 h-20 object-cover border cursor-pointer hover:border-blue-500">
+    </div>
+
+</div>
+
+<!-- RIGHT: DETAILS -->
+<div>
+
+    <h1 class="text-2xl font-semibold text-gray-800">
+        <%= product.name %>
+    </h1>
+
+    <!-- PRICE -->
+    <div class="mt-3">
+        <span class="text-3xl font-bold text-green-600">
             ₹<%= product.price %>
-        </p>
+        </span>
+        <span class="line-through text-gray-400 ml-2">
+            ₹<%= product.price + 200 %>
+        </span>
+        <span class="text-green-500 ml-2 text-sm">
+            20% off
+        </span>
+    </div>
 
-        <p class="text-gray-300">
-            Premium handmade product crafted with love ❤️  
-            High quality & best for gifting.
-        </p>
+    <!-- DELIVERY -->
+    <p class="mt-4 text-sm text-gray-600">
+        🚚 Free Delivery | 💰 Cash on Delivery Available
+    </p>
 
-        <!-- ADD TO CART -->
-        <a href="/products/add-to-cart/<%= product._id %>"
-           class="block text-center bg-gradient-to-r from-purple-500 to-pink-500 py-3 rounded-xl text-lg font-semibold hover:scale-105 transition">
+    <!-- DESCRIPTION -->
+    <p class="mt-4 text-gray-700">
+        Premium handmade product crafted with love ❤️  
+        High quality & best for gifting.
+    </p>
+
+    <!-- BUTTONS -->
+    <div class="flex gap-4 mt-6">
+
+        <button onclick="addToCart('<%= product._id %>')"
+            class="bg-yellow-400 px-6 py-3 rounded font-semibold hover:bg-yellow-500">
             Add to Cart 🛒
-        </a>
+        </button>
+
+        <button onclick="buyNow('<%= product._id %>')"
+            class="bg-orange-500 text-white px-6 py-3 rounded font-semibold hover:bg-orange-600">
+            Buy Now ⚡
+        </button>
 
     </div>
 
 </div>
+```
+
+</div>
+
+<!-- 🔻 EXTRA SECTION -->
+
+<div class="max-w-7xl mx-auto mt-6 bg-white p-6 rounded shadow">
+
+```
+<h2 class="text-lg font-semibold mb-3">Product Details</h2>
+
+<ul class="text-sm text-gray-700 space-y-2">
+    <li>✔ Handmade & Premium Quality</li>
+    <li>✔ Safe Packaging</li>
+    <li>✔ Long Lasting Product</li>
+    <li>✔ Perfect for gifting</li>
+</ul>
+```
+
+</div>
+
+<script>
+function changeImage(src) {
+    document.getElementById("mainImage").src = src;
+}
+
+async function addToCart(productId) {
+
+    const res = await fetch(`/products/add-to-cart-ajax/${productId}`, {
+        method: "POST"
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        alert("Added to cart ✅");
+    }
+}
+
+function buyNow(productId) {
+    window.location.href = "/checkout";
+}
+</script>
 
 </body>
 </html>

@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const User = require("../models/user-model");
 const isloggedin = require("../middlewares/isLoggedin");
 const userModel = require("../models/user-model");
 const productModel = require("../models/product-model");
@@ -93,27 +94,43 @@ router.get("/decrease/:id", isloggedin, async (req, res) => {
     res.redirect("/cart");
 });
 router.post("/add-to-cart-ajax/:id", isloggedin, async (req, res) => {
-    let user = await userModel.findById(req.user._id);
 
-    let itemIndex = user.cart.findIndex(
-        item => item.product.toString() === req.params.id
-    );
+    const product = await productModel.findById(req.params.id);
 
-    if (itemIndex > -1) {
-        user.cart[itemIndex].quantity += 1;
+    // ❌ OUT OF STOCK BLOCK
+    if (!product.inStock || product.stock <= 0) {
+        return res.json({ success: false, message: "Out of stock" });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    const existing = user.cart.find(item => item.product.equals(product._id));
+
+    if (existing) {
+
+        // ❌ STOCK LIMIT CHECK
+        if (existing.quantity >= product.stock) {
+            return res.json({
+                success: false,
+                message: "Stock limit reached"
+            });
+        }
+
+        existing.quantity++;
+
     } else {
         user.cart.push({
-            product: req.params.id,
+            product: product._id,
             quantity: 1
         });
     }
 
     await user.save();
 
-    // 🔥 send total count
-    const count = user.cart.reduce((acc, item) => acc + item.quantity, 0);
-
-    res.json({ success: true, count });
+    res.json({
+        success: true,
+        count: user.cart.reduce((acc, item) => acc + item.quantity, 0)
+    });
 });
 router.post("/increase-ajax/:id", isloggedin, async (req, res) => {
 

@@ -5,6 +5,19 @@ const productSchema = mongoose.Schema({
   name: String,
   price: Number,
   category: String,
+   stock: {
+        type: Number,
+        default: 0
+    },
+    inStock: {
+        type: Boolean,
+        default: true
+    },
+
+    lowStock: {
+        type: Boolean,
+        default: false
+    },
   discount: {
     type: Number,
     default: 0,

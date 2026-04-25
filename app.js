@@ -102,9 +102,10 @@ app.get("/", (req, res) => {
     res.render("index");
 });
 
-/* ADMIN */
-app.get("/admin", isloggedin, isAdmin, (req, res) => {
-    res.render("admin");
+// 🔥 ADMIN PAGE (SHOW PRODUCTS)
+app.get("/admin", isloggedin, isAdmin, async (req, res) => {
+    const products = await productModel.find();
+    res.render("admin", { products });
 });
 /* CHECKOUT */
 app.get("/checkout", isloggedin, async (req, res) => {
@@ -167,26 +168,65 @@ app.post("/create-order", isloggedin, async (req, res) => {
         res.json({ success: false, message: "Order failed" });
     }
 });
-app.post("/cod-order", isloggedin, async (req, res) => {
-
+app.post("/admin/add-product", isloggedin, isAdmin, async (req, res) => {
     try {
-        const index = Number(req.body.addressIndex); // ✅ FIX
+        let stock = Number(req.body.stock);
+
+        const product = await productModel.create({
+            ...req.body,
+            stock,
+            inStock: stock > 0,
+            lowStock: stock > 0 && stock <= 2
+        });
+
+        res.json({ success: true, product });
+
+    } catch {
+        res.json({ success: false });
+    }
+});
+
+app.post("/cod-order", isloggedin, async (req, res) => {
+    try {
+        const index = Number(req.body.addressIndex);
 
         const user = await User.findById(req.user._id)
             .populate("cart.product");
 
         const address = user.addresses[index];
 
-        // ❌ prevent crash
         if (!address) {
             return res.json({ success: false, message: "Invalid address" });
         }
 
+        // 🔥 STEP 1: CHECK STOCK FIRST
+        for (let item of user.cart) {
+            if (item.quantity > item.product.stock) {
+                return res.json({
+                    success: false,
+                    message: `${item.product.name} is out of stock`
+                });
+            }
+        }
+
+        // 🔥 STEP 2: REDUCE STOCK
+        for (let item of user.cart) {
+            let product = await productModel.findById(item.product._id);
+
+            product.stock -= item.quantity;
+            product.inStock = product.stock > 0;
+            product.lowStock = product.stock > 0 && product.stock <= 2;
+
+            await product.save();
+        }
+
+        // 🔥 STEP 3: CALCULATE TOTAL
         let total = 0;
         user.cart.forEach(item => {
             total += item.product.price * item.quantity;
         });
 
+        // 🔥 STEP 4: SAVE ORDER
         user.orders.push({
             items: user.cart,
             address,
@@ -208,29 +248,57 @@ app.post("/cod-order", isloggedin, async (req, res) => {
 });
 app.post("/online-order", isloggedin, async (req, res) => {
 
-    const user = await User.findById(req.user._id)
-        .populate("cart.product");
+    try {
+        const user = await User.findById(req.user._id)
+            .populate("cart.product");
 
-    const address = user.addresses[req.body.addressIndex];
+        const address = user.addresses[req.body.addressIndex];
 
-    let total = 0;
-    user.cart.forEach(item => {
-        total += item.product.price * item.quantity;
-    });
+        // 🔥 CHECK STOCK
+        for (let item of user.cart) {
+            if (item.quantity > item.product.stock) {
+                return res.json({
+                    success: false,
+                    message: `${item.product.name} is out of stock`
+                });
+            }
+        }
 
-    user.orders.push({
-        items: user.cart,
-        address,
-        total,
-        status: "Pending",
-        paymentMethod: "ONLINE",
-        paymentStatus: "Paid"
-    });
+        // 🔥 REDUCE STOCK
+        for (let item of user.cart) {
+            let product = await productModel.findById(item.product._id);
 
-    user.cart = [];
-    await user.save();
+            product.stock -= item.quantity;
+            product.inStock = product.stock > 0;
+            product.lowStock = product.stock > 0 && product.stock <= 2;
 
-    res.json({ success: true });
+            await product.save();
+        }
+
+        // 🔥 TOTAL
+        let total = 0;
+        user.cart.forEach(item => {
+            total += item.product.price * item.quantity;
+        });
+
+        user.orders.push({
+            items: user.cart,
+            address,
+            total,
+            status: "Pending",
+            paymentMethod: "ONLINE",
+            paymentStatus: "Paid"
+        });
+
+        user.cart = [];
+        await user.save();
+
+        res.json({ success: true });
+
+    } catch (err) {
+        console.log(err);
+        res.json({ success: false });
+    }
 });
 app.post("/admin/mark-paid/:userId/:orderId", async (req, res) => {
 
@@ -544,6 +612,42 @@ app.post("/admin/delete-answer/:productId/:qId", isloggedin, isAdmin, async (req
     await product.save();
 
     res.redirect("/product/" + req.params.productId);
+});
+app.post("/admin/delete-product/:id", isloggedin, isAdmin, async (req, res) => {
+    try {
+        await productModel.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (err) {
+        console.log(err);
+        res.json({ success: false });
+    }
+});
+
+// ✏️ EDIT PRODUCT (AJAX)
+app.post("/admin/edit-product/:id", isloggedin, isAdmin, async (req, res) => {
+    try {
+        let { stock } = req.body;
+
+        stock = Number(stock);
+
+        const updateData = {
+            ...req.body,
+            stock,
+            inStock: stock > 0,
+            lowStock: stock > 0 && stock <= 2
+        };
+
+        const product = await productModel.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true }
+        );
+
+        res.json({ success: true, product });
+
+    } catch (err) {
+        res.json({ success: false });
+    }
 });
 
 

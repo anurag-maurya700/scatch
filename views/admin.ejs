@@ -1,30 +1,191 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Admin</title>
+<title>Admin Panel</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-gray-900 text-white flex justify-center items-center h-screen">
+<body class="bg-gray-900 text-white p-6">
 
-<form action="/products/add" method="post" class="bg-gray-800 p-6 rounded-xl space-y-4 w-80">
+<!-- HEADER -->
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">👑 Admin Panel</h1>
 
-<h2 class="text-xl font-bold text-center">Add Product</h2>
+    <div class="flex gap-3">
+        <a href="/admin/orders" class="bg-blue-500 px-4 py-2 rounded">Orders</a>
+        <a href="/home" class="bg-purple-500 px-4 py-2 rounded">Store</a>
+    </div>
+</div>
 
-<input name="name" placeholder="Product Name" class="w-full p-2 rounded bg-gray-700">
+<div class="grid md:grid-cols-3 gap-6">
 
-<input name="price" placeholder="Price" class="w-full p-2 rounded bg-gray-700">
+<!-- ➕ ADD PRODUCT -->
+<div class="bg-gray-800 p-6 rounded-xl">
 
-<input name="image" placeholder="Image URL" class="w-full p-2 rounded bg-gray-700">
+    <h2 class="text-xl font-bold mb-4">Add Product</h2>
 
-<select name="category" class="w-full p-2 rounded bg-gray-700">
+   <form onsubmit="addProduct(event)" class="space-y-3">
+<input id="stock" placeholder="Stock" class="w-full p-2 rounded bg-gray-700">
+<input id="name" placeholder="Product Name" class="w-full p-2 rounded bg-gray-700">
+<input id="price" placeholder="Price" class="w-full p-2 rounded bg-gray-700">
+<input id="image" placeholder="Image URL" class="w-full p-2 rounded bg-gray-700">
+
+<select id="category" class="w-full p-2 rounded bg-gray-700">
     <option value="jewellery">Jewellery</option>
     <option value="pickle">Pickle</option>
 </select>
 
-<button class="w-full bg-purple-500 py-2 rounded">Add Product</button>
+<button class="w-full bg-purple-500 py-2 rounded">
+    Add Product
+</button>
+
 
 </form>
+
+</div>
+
+<!-- 📦 PRODUCT LIST -->
+<div class="md:col-span-2 grid md:grid-cols-2 gap-4">
+
+<% products.forEach(p => { %>
+
+<div id="product-<%= p._id %>" class="bg-gray-800 p-4 rounded-xl">
+    <img src="<%= p.image %>" class="w-full h-40 object-cover rounded">
+         <!-- 🔥 STOCK STATUS (PUT HERE) -->
+    <% if (p.stock === 0) { %>
+        <p class="text-red-500 font-bold">Out of Stock ❌</p>
+    <% } else if (p.stock <= 2) { %>
+        <p class="text-yellow-400 font-bold">Low Stock ⚠</p>
+    <% } else { %>
+        <p class="text-green-400 font-bold">In Stock ✅</p>
+    <% } %>
+
+    <!-- ✏️ EDIT -->
+    
+        <input name="stock" value="<%= p.stock %>"
+    class="w-full p-2 rounded bg-gray-700">
+        <input name="name" value="<%= p.name %>"
+            class="w-full p-2 rounded bg-gray-700">
+
+        <input name="price" value="<%= p.price %>"
+            class="w-full p-2 rounded bg-gray-700">
+
+        <input name="image" value="<%= p.image %>"
+            class="w-full p-2 rounded bg-gray-700">
+
+        <input name="category" value="<%= p.category %>"
+            class="w-full p-2 rounded bg-gray-700">
+
+     <button type="button" onclick="updateProduct('<%= p._id %>')" 
+class="bg-blue-500 w-full py-2 rounded mt-2">
+    Update
+</button>
+
+<button type="button" onclick="deleteProduct('<%= p._id %>')" 
+class="bg-red-500 w-full py-2 mt-2 rounded">
+    Delete
+</button>
+
+
+</div>
+
+<% }) %>
+
+</div>
+
+</div>
+<script>
+
+// ➕ ADD PRODUCT
+async function addProduct(e) {
+    e.preventDefault();
+
+    const res = await fetch("/admin/add-product", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            name: document.getElementById("name").value,
+            price: document.getElementById("price").value,
+            image: document.getElementById("image").value,
+            category: document.getElementById("category").value,
+            stock: document.getElementById("stock").value,
+            
+            
+        })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        showToast("Product Added ✅");
+        location.reload(); // simple refresh (or dynamic append later)
+    }
+}
+
+
+// ✏️ UPDATE PRODUCT
+async function updateProduct(id) {
+
+    const card = document.getElementById("product-" + id);
+
+    const inputs = card.querySelectorAll("input");
+
+    const res = await fetch(`/admin/edit-product/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            stock: inputs[0].value, // ✅ HERE
+            name: inputs[1].value,
+            price: inputs[2].value,
+            image: inputs[3].value,
+            category: inputs[4].value,
+             
+        })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        showToast("Updated ✅");
+        location.reload(); // ✅ ADD THIS
+    }
+}
+
+
+// ❌ DELETE PRODUCT
+async function deleteProduct(id) {
+
+    if (!confirm("Delete this product?")) return;
+
+    const res = await fetch(`/admin/delete-product/${id}`, {
+        method: "POST"
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        document.getElementById("product-" + id).remove();
+        showToast("Deleted ❌");
+    }
+}
+
+
+// 🔥 TOAST
+function showToast(msg) {
+    const toast = document.createElement("div");
+    toast.innerText = msg;
+
+    toast.className = `
+        fixed bottom-5 right-5 
+        bg-green-500 text-white px-4 py-2 rounded
+    `;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => toast.remove(), 2000);
+}
+
+</script>
 
 </body>
 </html>
